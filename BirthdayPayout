@@ -1,0 +1,106 @@
+pragma solidity ^0.8.0;
+
+import "https://github.com/bokkypoobah/BokkyPooBahsDateTimeLibrary/blob/master/contracts/BokkyPooBahsDateTimeLibrary.sol";
+
+contract BirthdayPayout {
+
+// 0xAb8483F64d9C6d1EcF9b849Ae677dD3315835cb2,Eva,1571900400
+// 0x4B20993Bc481177ec7E8f571ceCaE8A9e22C02db,Dima,504738000
+// 0x78731D3Ca6b7E34aC0F824c42a7cC18A495cabaB,Ron,504651600
+// 0x617F2E2fD72FD9D5503197092aC168c91465E7f2,Lisa,958064400
+
+    string _name;
+
+    address _owner;
+
+    Teammate[] private _teammates;
+
+    struct Teammate {
+        string name;
+        address account;
+        uint256 birthday_day;
+        uint256 birthday_month;
+        uint256 birthday_year;
+        uint256 last_payout_year;
+    }
+
+    uint256 constant PRESENT = 100000000000000000;
+
+    constructor() public {
+        _name="Denys";
+        _owner = msg.sender;
+    }
+
+    function addTeammate(address account,string memory name, uint256 birthday) public onlyOwner{
+        require(msg.sender != account,"Cannot add oneself");
+        (,,uint256 birthday_day) = getDate(birthday);
+        (,uint256 birthday_month,) = getDate(birthday);
+        (uint256 birthday_year,,) = getDate(birthday);
+        Teammate memory newTeammate = Teammate(name, account, birthday_day, birthday_month, birthday_year, 0); 
+        _teammates.push(newTeammate);
+    }
+
+        function findBirthday() public onlyOwner{
+        require(getTeammatesNumber()>0,"No teammates in the database");
+        for(uint256 i=0;i<getTeammatesNumber();i++){
+            if(checkBirthday(i) && checkLastPayout(i)){
+                birthdayPayout(i);               
+            }
+        }
+    }
+
+    function getDate(uint256 timestamp) private returns(uint256 year, uint256 month, uint256 day){
+        (year, month, day) = BokkyPooBahsDateTimeLibrary.timestampToDate(timestamp);
+    }
+
+    function checkBirthday(uint256 index) private returns(bool){
+        uint256 birthday_day = _teammates[index].birthday_day;
+        uint256 birthday_month = _teammates[index].birthday_month;
+        uint256 today = block.timestamp;
+        (, uint256 today_month,uint256 today_day) = getDate(today);
+
+        if(birthday_day == today_day && birthday_month == today_month){
+            return true;
+        }
+        return false;
+    }
+
+    function checkLastPayout(uint256 index) private returns(bool){
+        uint256 last_payout_year = _teammates[index].last_payout_year;
+        
+        uint256 today = block.timestamp;
+        (uint256 today_year,,) = getDate(today);
+
+        if(last_payout_year == today_year){
+            return false;
+        }
+        return true;
+    }
+
+    function birthdayPayout(uint256 index) private onlyOwner {
+        require(address(this).balance>=PRESENT,"Not enough balance");
+        uint256 year = block.timestamp;
+        (uint256 today_year,,) = getDate(year);
+        _teammates[index].last_payout_year = today_year;
+        payable(_teammates[index].account).transfer(PRESENT);
+    }
+
+    function getTeammate(uint256 index) view public returns(Teammate memory){
+        return _teammates[index];
+    }
+
+    function getTeammatesNumber() view public returns(uint256){
+        return _teammates.length;
+    }
+
+    function deposit() public payable{
+
+    }
+
+    modifier onlyOwner{
+        require(msg.sender == _owner,"Sender should be the owner of contract");
+        _;
+    }
+
+
+}
