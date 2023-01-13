@@ -10,9 +10,16 @@ library StringComparer{
         return keccak256(abi.encodePacked(str1)) == keccak256(abi.encodePacked(str2));
     }
 
-    function compare2(string memory str1, string memory str2) public pure returns (bool) {
-        return keccak256(abi.encodePacked(str1)) != keccak256(abi.encodePacked(str2));
+    function compare2(string memory str1, string memory str2, string memory str3) public pure returns (bool) {
+
+        if(keccak256(abi.encodePacked(str1)) == keccak256(abi.encodePacked(str2))){
+            return true;
+        }
+        if(keccak256(abi.encodePacked(str1)) == keccak256(abi.encodePacked(str3))){
+            return true;
+        }
     }
+
 }
 
 contract HasName{
@@ -32,7 +39,6 @@ abstract contract Animal is Living{
     
     string constant PLANT = "plant";
     string constant MEAT = "meat";
-    string constant SWEET = "chocolate";
     
     function eat(string memory food) view virtual public returns(string memory){
         return string.concat( "Animal eats ", food);
@@ -56,10 +62,11 @@ abstract contract Animal is Living{
         _;
     }
 
-    modifier NoEatChocolate(string memory food){
-        require(StringComparer.compare2(food,SWEET),"Can only eat meat food");
+    modifier eatMeatAndPlant(string memory food){
+        require(StringComparer.compare2(food,PLANT,MEAT), "Can only eat meat and plant food");
         _;
     }
+
 }
 
 contract Cow is Animal, HasName{
@@ -100,7 +107,7 @@ contract Wolf is Animal, HasName{
     }
 
     function speak() view override public returns(string memory){
-        return "R-r-r";
+        return "Awoo";
     }
 }
 
@@ -108,13 +115,13 @@ contract Dog is Animal, HasName{
 
     constructor(string memory name) HasName(name){
     }
-
-    function eat(string memory food) view override public eatOnlyMeat(food) NoEatChocolate(food) returns(string memory){
+    
+    function eat(string memory food) view override public eatMeatAndPlant(food) returns(string memory){
         return Animal.eat(food);
     }
 
     function speak() view override public returns(string memory){
-        return "Af-af-af";
+        return "Woof";
     }
 }
 
