@@ -1,0 +1,129 @@
+pragma solidity 0.8.17;
+
+interface Living{
+    function eat(string memory food) external returns(string memory);
+}
+
+library StringComparer{
+    
+    function compare1(string memory str1, string memory str2) public pure returns (bool) {
+        return keccak256(abi.encodePacked(str1)) == keccak256(abi.encodePacked(str2));
+    }
+
+    function compare2(string memory str1, string memory str2) public pure returns (bool) {
+        return keccak256(abi.encodePacked(str1)) != keccak256(abi.encodePacked(str2));
+    }
+}
+
+contract HasName{
+    
+    string internal _name;
+    
+    constructor(string memory name){
+        _name = name;
+    }
+
+    function getName() view public returns(string memory){
+        return _name;
+    }
+}
+
+abstract contract Animal is Living{
+    
+    string constant PLANT = "plant";
+    string constant MEAT = "meat";
+    string constant SWEET = "chocolate";
+    
+    function eat(string memory food) view virtual public returns(string memory){
+        return string.concat( "Animal eats ", food);
+    }
+
+    function sleep() view public returns(string memory){
+        return "Z-z-z...";
+    }
+
+    function speak() view virtual public returns(string memory){
+        return "...";
+    }
+
+    modifier eatOnlyPlant(string memory food){
+        require(StringComparer.compare1(food,PLANT),"Can only eat plant food");
+        _;
+    }
+
+    modifier eatOnlyMeat(string memory food){
+        require(StringComparer.compare1(food,MEAT),"Can only eat meat food");
+        _;
+    }
+
+    modifier NoEatChocolate(string memory food){
+        require(StringComparer.compare2(food,SWEET),"Can only eat meat food");
+        _;
+    }
+}
+
+contract Cow is Animal, HasName{
+
+    constructor(string memory name) HasName(name){
+    }
+
+    function eat(string memory food) view override public eatOnlyPlant(food) returns(string memory){
+        return Animal.eat(food);
+    }
+
+    function speak() view override public returns(string memory){
+        return "Mooo";
+    }
+}
+
+contract Horse is Animal, HasName{
+
+    constructor(string memory name) HasName(name){
+    }
+
+    function eat(string memory food) view override public eatOnlyPlant(food) returns(string memory){
+        return Animal.eat(food);
+    }
+
+    function speak() view override public returns(string memory){
+        return "Igogo";
+    }
+}
+
+contract Wolf is Animal, HasName{
+
+    constructor(string memory name) HasName(name){
+    }
+
+    function eat(string memory food) view override public eatOnlyMeat(food) returns(string memory){
+        return Animal.eat(food);
+    }
+
+    function speak() view override public returns(string memory){
+        return "R-r-r";
+    }
+}
+
+contract Dog is Animal, HasName{
+
+    constructor(string memory name) HasName(name){
+    }
+
+    function eat(string memory food) view override public eatOnlyMeat(food) NoEatChocolate(food) returns(string memory){
+        return Animal.eat(food);
+    }
+
+    function speak() view override public returns(string memory){
+        return "Af-af-af";
+    }
+}
+
+contract Farmer{
+    function feed(address animal, string memory food) view public returns(string memory){
+        return Animal(animal).eat(food);
+    }
+
+    function call(address animal) view public returns(string memory){
+        return Animal(animal).speak();
+    }
+}
